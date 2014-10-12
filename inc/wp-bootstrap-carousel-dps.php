@@ -66,6 +66,9 @@ class WP_Bootstrap_Carousel_DPS
         global $wp_bc_found_posts;
         $wp_bc_found_posts = 0;
 
+        if( isset( $original_atts['post_type'] ) && 'attachment' == $original_atts['post_type'] )
+            $args['post_status'] = 'inherit';
+
         $listing = new WP_Query( $args );
         if ( $listing->have_posts() )
             $wp_bc_found_posts = $listing->found_posts;
@@ -80,17 +83,22 @@ class WP_Bootstrap_Carousel_DPS
 
         global $post;
 
-        if( ! post_type_supports( get_post_type( $post ), 'thumbnail' ) )
-            continue;
+        $post_type = $post->post_type;
+
+        if( ! ( post_type_supports( $post_type, 'thumbnail' ) || 'attachment' == $post_type ) )
+            return;
+
+        $thickbox       = ( isset( $original_atts['thickbox'] ) ? wp_bc_bool( $original_atts['thickbox'] ) : 0 );
+        $unwrap         = ( isset( $original_atts['unwrap'] ) ? wp_bc_bool( $original_atts['unwrap'] ) : 0 );
 
         $image_size     = ( isset( $original_atts['image_size'] ) ? sanitize_text_field( $original_atts['image_size'] ) : 'large' );
-        $thickbox       = ( isset( $original_atts['thickbox'] ) ? wp_bc_bool( $original_atts['thickbox'] ) : 1 );
-        $src            = wp_get_attachment_image_src( get_post_thumbnail_id( $post->ID ), $image_size );
-        $link           = ( $thickbox ) ? $src[0] : get_permalink();
+        $cropped        = ( 'attachment' == $post_type ) ? wp_get_attachment_image_src( $post->ID, $image_size ) : wp_get_attachment_image_src( get_post_thumbnail_id( $post->ID ), $image_size );
+        $full           = ( 'attachment' == $post_type ) ? wp_get_attachment_image_src( $post->ID, 'full' ) : wp_get_attachment_image_src( get_post_thumbnail_id( $post->ID ), 'full' );
+        $href           = ( $thickbox ) ? $full[0] : get_permalink( $post->ID );
 
         $inner_wrapper  = 'div';
-        $image          = '<a class="image' . ( ( $thickbox ) ? " thickbox" : "" ) . '" href="' . $link . '">' . get_the_post_thumbnail( $post->ID, $image_size ) . '</a>';
-        $title          = '<a class="title' . ( ( $thickbox ) ? " thickbox" : "" ) . '" href="' . $link . '">' . get_the_title() . '</a>';
+        $image          = '<a class="image' . ( ( $thickbox ) ? " thickbox" : "" ) . '" href="' . $href . '"><img src="' . $cropped[0] . '" alt=""' . ( ( $unwrap ) ? " data-wpbc_unwrap='1'" : "" ) . ' /></a>';
+        $title          = '<a class="title' . ( ( $thickbox ) ? " thickbox" : "" ) . '" href="' . $href . '">' . get_the_title() . '</a>';
 
         $output = '';
         $output .= '<' . $inner_wrapper . ' class="' . implode( ' ', $class ) . ' item active">';
@@ -116,13 +124,14 @@ class WP_Bootstrap_Carousel_DPS
 
         global $content_width, $wp_bootstrap_carousel, $wp_bc_found_posts;
 
-        $width_int  = ( isset( $original_atts['width'] ) )      ? intval( str_replace( array( '%', 'px' ), '', trim( $original_atts['width'] ) ) ) : ( isset( $content_width ) ? $content_width : '300' );
+        $max_width  = ( isset( $original_atts['width'] ) )      ? intval( str_replace( array( '%', 'px' ), '', trim( $original_atts['width'] ) ) ) : ( isset( $content_width ) ? $content_width : '' );
+        $max_width  = ( ! empty( $max_width ) )                 ? "max-width:{$max_width}px;" : '';
         $controls   = ( isset( $original_atts['controls'] )     ? wp_bc_bool( $original_atts['controls'] ) : 1 );
         $slide      = ( isset( $original_atts['slide'] )        ? wp_bc_bool( $original_atts['slide'] ) : 1 );
         $interval   = ( isset( $original_atts['interval'] )     ? intval( $original_atts['interval'] ) : 5000 );
         $pause      = ( isset( $original_atts['pause'] )        ? sanitize_text_field( $original_atts['pause'] ) : 'hover' );
         $wrap       = ( isset( $original_atts['wrap'] )         ? wp_bc_bool( $original_atts['wrap'] ) : 1 );
-        $thickbox   = ( isset( $original_atts['thickbox'] )     ? wp_bc_bool( $original_atts['thickbox'] ) : 1 );
+        $thickbox   = ( isset( $original_atts['thickbox'] )     ? wp_bc_bool( $original_atts['thickbox'] ) : 0 );
 
         static $it = 1;
         $it++;
@@ -130,7 +139,7 @@ class WP_Bootstrap_Carousel_DPS
         $output = '';
         $output .= $wp_bootstrap_carousel->enqueue( $thickbox );
 
-        $output .= '<div style="width:' . $width_int . 'px;" id="wp-bootstrap-carousel-dps-' . $it . '" class="carousel carousel-dps' . ( ( $slide ) ? " slide" : "" ) . '" data-interval="' . $interval . '" data-pause="' . $pause . '" data-wrap="' . $wrap . '">';
+        $output .= '<div style="width:100%;' . $max_width . '" id="wp-bootstrap-carousel-dps-' . $it . '" class="carousel carousel-dps' . ( ( $slide ) ? " slide" : "" ) . '" data-interval="' . $interval . '" data-pause="' . $pause . '" data-wrap="' . $wrap . '">';
 
         /**
          * INDICATORS
@@ -163,8 +172,8 @@ class WP_Bootstrap_Carousel_DPS
         $output .= '</div><!-- .carousel-inner -->';
 
         if( $controls )
-            $output .= '<a class="carousel-control carousel-control-dps left" data-slide="prev" href="#wp-bootstrap-carousel-dps-' . $it . '"><span class="icon-prev"></span></a>
-            <a class="carousel-control carousel-control-dps right" data-slide="next" href="#wp-bootstrap-carousel-dps-' . $it . '"><span class="icon-next"></span></a>';
+            $output .= '<a class="carousel-control carousel-control-dps left" role="button" data-slide="prev" href="#wp-bootstrap-carousel-dps-' . $it . '"><span class="icon-prev"></span></a>
+            <a class="carousel-control carousel-control-dps right" role="button" data-slide="next" href="#wp-bootstrap-carousel-dps-' . $it . '"><span class="icon-next"></span></a>';
 
         $output .= '</div><!-- .carousel -->';
 
