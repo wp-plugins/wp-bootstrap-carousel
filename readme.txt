@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: bootstrap, slideshow, carousel, images, gallery, shortcode
 Requires at least: 3.4
 Tested up to: 4.0
-Stable tag: 0.2.1
+Stable tag: 0.3.0
 License: GPLv3
 
 A simple, straightforward implementation of the Twitter Bootstrap Carousel in WordPress.
@@ -59,6 +59,14 @@ Checkout and contribute to the plugin source code on [GitHub](https://github.com
 
 == Changelog ==
 
+= 0.3.0 - 12/10/2014 = 
+* update JS and CSS to Bootstrap 3.2.0
+* make carousel responsive
+* allow img attachment queries with DPS addon
+* allow unwrapping of images with unwrap shortcode attribute
+* thickbox default set to false for DPS carousels
+* use add_thickbox
+
 = 0.2.1 - 20/11/2013 = 
 * check boolean shortcode args properly
 * introduce wp_bootstrap_carousel_dps_caption filter
@@ -82,6 +90,9 @@ Checkout and contribute to the plugin source code on [GitHub](https://github.com
 * Initial release 0.1.1
 
 == Upgrade Notice ==
+
+= 0.3.0 =
+Includes Bootstrap Carousel 3.2.0, makes carousel responsive, allows attachment queries with DPS addon, introduces unwrap argument
 
 = 0.2.1 =
 minor update
